@@ -4,8 +4,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "node --watch index.js",
-    "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest",
-    "build": "tsc"
+    "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest"
   },
   "author": "",
   "license": "ISC",
