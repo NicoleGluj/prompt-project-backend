@@ -12,16 +12,23 @@ import authMiddleware from "./src/middlewares/authMiddleware.js"
 
 dotenv.config()
 
+const { MONGO_URI, JWT_SECRET } = process.env;
+
+const PORT = parseInt(process.env.PORT || "3000", 10);
+const NODE_ENV = process.env.NODE_ENV || "development";
+
+
+if (!MONGO_URI || !JWT_SECRET) {
+  console.error("❌ Error: Variables de entorno faltantes (MONGO_URI o JWT_SECRET).");
+  process.exit(1);
+}
+
 const app = express();
+app.use(express.json());
+app.use(cors());
 
-const PORT = process.env.PORT;
-const port = parseInt((process.env.PORT || 3000).toString().trim().replace(/[^0-9]/g, '')) || 3000;
-
-const MONGO_URI = process.env.MONGO_URI;
-const NODE_ENV = process.env.NODE_ENV;
 
 const logsDir = path.join(process.cwd(), "logs");
-
 if (!fs.existsSync(logsDir)) {
   fs.mkdirSync(logsDir);
 }
@@ -43,8 +50,6 @@ app.use(
   })
 );
 
-app.use(express.json());
-app.use(cors());
 
 app.get("/status", (req, res) => {
   const dbState = mongoose.connection.readyState;
@@ -71,20 +76,22 @@ app.get("/status", (req, res) => {
 app.use("/auth", authRouter)
 app.use("/tasks", authMiddleware, taskRouter)
 
-app.get("/test", (req, res) => {
-  console.log('aca')
-});
-
 app.use((req, res) => {
-  res.status(404).send("Ruta no encontrada");
+  res.status(404).json({ message: "Ruta no encontrada" });
 });
 
-if (NODE_ENV !== "test") {
-  // Iniciar servidor
-  app.listen(port, () => {
-    connectDb(MONGO_URI)
-    console.log(`✅ Servidor corriendo en http://localhost:${port}`);
+connectDb()
+  .then(() => {
+    app.listen(PORT, () => console.log(`✅ Servidor corriendo en puerto ${PORT} [${NODE_ENV}]`));
+  })
+  .catch((err) => {
+    console.error("❌ Error al conectar con MongoDB:", err);
+    process.exit(1);
   });
-}
+
+process.on("SIGINT", async () => {
+  console.log("\n🛑 Cerrando servidor...");
+  process.exit(0);
+});
 
 export default app

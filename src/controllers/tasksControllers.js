@@ -1,54 +1,80 @@
 import Task from "../models/TasksModel.js";
+import mongoose from "mongoose";
+
 
 const getAllTasks = async (req, res) => {
   try {
-    const tasks = await Task.find();
+    const userId = req.user.id;
+    const tasks = await Task.find({ userId }).sort({ createdAt: -1 });
     res.status(200).json(tasks);
-  } catch (err) {
-    res.status(500).send("Error al obtener tareas");
+  } catch (error) {
+    console.error(`[Tasks] Error al obtener tareas: ${error.message}`);
+    res.status(500).json({ message: "Error al obtener tareas" });
   }
 }
 
 const addTask = async (req, res) => {
   try {
+    const userId = req.user.id;
     const { text } = req.body;
-    if (!text) return res.status(400).send("Datos inválidos");
 
-    const newTask = new Task({ text });
-    console.log(newTask)
+    const cleanText = text?.trim();
+    if (!cleanText) {
+      return res.status(400).json({ message: "El texto de la tarea es obligatorio" });
+    }
+
+    const newTask = new Task({ text: cleanText, userId });
     await newTask.save();
 
     res.status(201).json(newTask);
-  } catch {
-    res.status(400).send("Datos inválidos");
+  } catch (error) {
+    console.error(`[Tasks] Error al crear tarea: ${error.message}`);
+    res.status(500).json({ message: "Error al crear tarea" });
   }
 }
 
 const updateTask = async (req, res) => {
   try {
     const { id } = req.params;
-    const updates = req.body;
+    const userId = req.user.id;
 
-    const updatedTask = await Task.findByIdAndUpdate(id, updates, {
-      new: true,
-    });
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "ID de tarea no válido" });
+    }
 
-    if (!updatedTask) return res.status(404).send("Task no encontrada");
-    res.status(200).json(updatedTask);
-  } catch {
-    res.status(400).send("Datos inválidos");
+    const task = await Task.findOne({ _id: id, userId });
+    if (!task) {
+      return res.status(404).json({ message: "Tarea no encontrada" });
+    }
+
+    task.completed = !task.completed;
+    await task.save();
+
+    res.status(200).json(task);
+  } catch (error) {
+    console.error(`[Tasks] Error al actualizar tarea: ${error.message}`);
+    res.status(500).json({ message: "Error al actualizar tarea" });
   }
 }
 
 const deleteTask = async (req, res) => {
   try {
     const { id } = req.params;
-    const deleted = await Task.findByIdAndDelete(id);
+    const userId = req.user.id;
 
-    if (!deleted) return res.status(404).send("Task no encontrada");
-    res.status(200).json({ message: "Task eliminada" });
-  } catch {
-    res.status(500).send("Error al eliminar la task");
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "ID de tarea no válido" });
+    }
+
+    const deletedTask = await Task.findOneAndDelete({ _id: id, userId });
+    if (!deletedTask) {
+      return res.status(404).json({ message: "Tarea no encontrada" });
+    }
+
+    res.status(200).json({ message: "Tarea eliminada correctamente" });
+  } catch (error) {
+    console.error(`[Tasks] Error al eliminar tarea: ${error.message}`);
+    res.status(500).json({ message: "Error al eliminar tarea" });
   }
 }
 
