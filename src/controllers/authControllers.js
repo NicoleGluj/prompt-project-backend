@@ -29,7 +29,7 @@ export const UserRegister = async (req, res) => {
     const newUser = new User({
       name: name.trim(),
       email: email.toLowerCase().trim(),
-      password: hashedPassword,
+      password: hash,
     });
     await newUser.save();
 
@@ -67,7 +67,7 @@ export const UserLogin = async (req, res) => {
       name: user.name,
       email: user.email,
     });
-  } catch {
+  } catch (error) {
     console.error(`[AuthError - login] ${error.message}`);
     res.status(500).json({ message: "Error al iniciar sesión" });
   }
