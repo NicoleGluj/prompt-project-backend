@@ -34,7 +34,7 @@ export const UserRegister = async (req, res) => {
     await newUser.save();
 
     res.status(201).json({ message: "Usuario creado correctamente" });
-  } catch (e) {
+  } catch (error) {
     console.error(`[AuthError - register] ${error.message}`);
     res.status(500).json({ message: "Error al registrar usuario" });
   }
