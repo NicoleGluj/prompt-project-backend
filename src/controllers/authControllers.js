@@ -14,16 +14,19 @@ export const UserRegister = async (req, res) => {
     if (!name || !email || !password) {
       return res.status(400).json({ message: "Todos los campos son obligatorios" });
     }
+
     if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
       return res.status(400).json({ message: "El email no es válido" });
     }
+
     if (password.length < 6) {
       return res.status(400).json({ message: "La contraseña debe tener al menos 6 caracteres" });
     }
 
     const exists = await User.findOne({ email: email.toLowerCase() });
-
-    if (exists) return res.status(400).json({ message: "El usuario ya está registrado" });
+    if (exists) {
+      return res.status(400).json({ message: "Este correo ya está registrado. Iniciá sesión para continuar." });
+    }
 
     const hash = await bcrypt.hash(password, 10);
     const newUser = new User({
@@ -31,14 +34,21 @@ export const UserRegister = async (req, res) => {
       email: email.toLowerCase().trim(),
       password: hash,
     });
+
     await newUser.save();
 
-    res.status(201).json({ message: "Usuario creado correctamente" });
+    res.status(201).json({ message: "¡Tu cuenta fue creada con éxito! Ya podés iniciar sesión." });
   } catch (error) {
     console.error(`[AuthError - register] ${error.message}`);
-    res.status(500).json({ message: "Error al registrar usuario" });
+
+    if (error.code === 11000) {
+      return res.status(400).json({ message: "Este email ya está registrado. Iniciá sesión para continuar." });
+    }
+
+    res.status(500).json({ message: "Ocurrió un error inesperado. Por favor, intentá nuevamente más tarde." });
   }
-}
+};
+
 
 export const UserLogin = async (req, res) => {
   try {
