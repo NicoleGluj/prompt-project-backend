@@ -15,7 +15,7 @@ export const UserRegister = async (req, res) => {
       return res.status(400).json({ message: "Todos los campos son obligatorios" });
     }
 
-    if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+    if (!email.match(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/)) {
       return res.status(400).json({ message: "El email no es válido" });
     }
 
@@ -56,6 +56,10 @@ export const UserLogin = async (req, res) => {
 
     if (!email || !password) {
       return res.status(400).json({ message: "Todos los campos son obligatorios" });
+    }
+
+    if (!email.match(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/)) {
+      return res.status(400).json({ message: "El email no es válido" });
     }
 
     const user = await User.findOne({ email: email.toLowerCase().trim() });

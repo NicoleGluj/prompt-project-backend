@@ -16,10 +16,15 @@ const addTask = async (req, res) => {
     const { text } = req.body;
 
     const cleanText = text?.trim();
+
     if (!cleanText) {
       return res
         .status(400)
         .json({ message: "El texto de la tarea es obligatorio" });
+    }
+
+    if (cleanText.length > 50) {
+      return res.status(400).json({ message: "El texto es demasiado largo" });
     }
 
     const newTask = new Task({ text: cleanText });
